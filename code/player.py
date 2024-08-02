@@ -22,6 +22,7 @@ class Player(pygame.sprite.Sprite):
 
         self.collision_sprites = collision_sprites
         self.on_surf = {'floor': False, 'left': False, 'right': False}
+        self.platform = None
 
         self.timers = {
             'wall jump': Timer(400),
@@ -45,7 +46,7 @@ class Player(pygame.sprite.Sprite):
         self.collision('x')
 
         if not self.on_surf['floor'] and any((self.on_surf['left'],
-                                                     self.on_surf['right'])) and not self.timers['wall slide block'].active:
+                                              self.on_surf['right'])) and not self.timers['wall slide block'].active:
             self.direction.y = 0
             self.rect.y += self.gravity / 10 * dt
         else:
@@ -56,17 +57,22 @@ class Player(pygame.sprite.Sprite):
         if self.jump:
             if self.on_surf['floor']:
                 self.direction.y = -self.jump_height
+                self.timers['wall slide block'].activate()
+                self.rect.bottom -= 1
 
             elif any((self.on_surf['left'], self.on_surf['right'])) and not self.timers['wall slide block'].active:
 
                 self.timers['wall jump'].activate()
-                self.timers['wall slide block'].activate()
                 self.direction.y = -self.jump_height
                 self.direction.x = 1 if self.on_surf['left'] else -1
 
             self.jump = False
 
         self.collision('y')
+
+    def platform_move(self, dt):
+        if self.platform:
+            self.rect.topleft += self.platform.direction * self.platform.speed * dt
 
     def check_contact(self):
         floor_rect = pygame.Rect(self.rect.bottomleft, (self.rect.width, 2))
@@ -78,6 +84,11 @@ class Player(pygame.sprite.Sprite):
         self.on_surf['floor'] = True if floor_rect.collidelist(collide_rects) >= 0 else False
         self.on_surf['right'] = True if right_rect.collidelist(collide_rects) >= 0 else False
         self.on_surf['left'] = True if left_rect.collidelist(collide_rects) >= 0 else False
+
+        self.platform = None
+        for sprite in [sprite for sprite in self.collision_sprites if hasattr(sprite, 'moving')]:
+            if sprite.rect.colliderect(floor_rect):
+                self.platform = sprite
 
     def collision(self, axis):
         for sprite in self.collision_sprites:
@@ -109,5 +120,6 @@ class Player(pygame.sprite.Sprite):
 
         self.input()
         self.move(dt)
+        self.platform_move(dt)
 
         self.check_contact()

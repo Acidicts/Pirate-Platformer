@@ -20,16 +20,21 @@ class Game:
         self.current_stage = Level(self.tmx_maps[0])
 
     def run(self):
-        while True:
+        running = True
+
+        while running:
             dt = self.clock.tick() / 1000
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    pygame.quit()
-                    sys.exit()
+                    running = False
 
             self.current_stage.run(dt)
 
             pygame.display.update()
+
+        pygame.quit()
+        sys.exit()
+
 
 if __name__ == "__main__":
     game = Game()

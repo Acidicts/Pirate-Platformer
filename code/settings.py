@@ -1,7 +1,9 @@
 import os
 import pygame
 from pygame.math import Vector2
-from timer import Timer
+
+from timer import *
+
 
 BASE_PATH = os.path.dirname(__file__).replace('\\',
                                               '/').replace('code',
