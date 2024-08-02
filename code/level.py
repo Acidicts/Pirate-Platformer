@@ -28,5 +28,5 @@ class Level:
     def run(self, dt):
         self.win.fill((0, 0, 0))
 
-        self.all_sprites.update(dt)
         self.all_sprites.draw(self.win)
+        self.all_sprites.update(dt)
