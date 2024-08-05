@@ -78,7 +78,12 @@ class Level:
                     AnimatedSprite((obj.x, obj.y), frames, groups, z)
 
         for obj in tmx_map.get_layer_by_name('Moving Objects'):
-            if obj.name == 'helicopter':
+            if obj.name == "spike":
+                pass
+            else:
+                frames = level_frames[obj.name]
+                groups = (self.all_sprites, self.semi_collision_sprites) if obj.properties["platform"] else (self.all_sprites,)
+
                 if obj.width > obj.height:
                     move_dir = 'x'
                     start_pos = (obj.x, obj.y + obj.height / 2)
@@ -89,8 +94,19 @@ class Level:
                     end_pos = (obj.x + obj.width / 2, obj.y + obj.height)
 
                 speed = obj.properties["speed"]
+                MovingSprite(frames, groups, start_pos, end_pos, move_dir, speed, obj.properties['flip'])
 
-                MovingSprite((self.all_sprites, self.semi_collision_sprites), start_pos, end_pos, move_dir, speed)
+                if obj.name == "saw":
+                    if move_dir == "x":
+                        y = start_pos[1] - level_frames['saw_chain'].get_height() / 2
+                        left, right = start_pos[0], end_pos[0]
+                        for x in range(int(left), int(right), 20):
+                            Sprite((x, y), level_frames['saw_chain'], (self.all_sprites, self.damage_sprites), Z_LAYERS['bg details'])
+                    else:
+                        x = start_pos[0] - level_frames['saw_chain'].get_width() / 2
+                        top, bottom = start_pos[1], end_pos[1]
+                        for y in range(int(top), int(bottom), 20):
+                            Sprite((x, y), level_frames['saw_chain'], (self.all_sprites, self.damage_sprites), Z_LAYERS['bg details'])
 
     def run(self, dt):
         self.win.fill((0, 0, 0))
