@@ -3,21 +3,31 @@ import sys
 
 from settings import *
 from level import Level
+from support import *
 from pytmx.util_pygame import load_pygame
 
 
 class Game:
     def __init__(self):
+        self.level_frames = None
         pygame.init()
 
         self.win = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
         self.clock = pygame.time.Clock()
+        self.import_assets()
 
         pygame.display.set_caption("Super Pirate Adventure")
 
         self.tmx_maps = {0: load_pygame(BASE_PATH + 'data/levels/omni.tmx')}
 
-        self.current_stage = Level(self.tmx_maps[0])
+        self.current_stage = Level(self.tmx_maps[0], self.level_frames)
+
+    def import_assets(self):
+        self.level_frames = {
+            'flag': import_folder('graphics', 'level', 'flag'),
+            'saw': import_folder('graphics', 'enemies', 'saw', 'animation'),
+            'floor_spike': import_folder('graphics', 'enemies', 'floor_spikes')
+        }
 
     def run(self):
         running = True

@@ -13,6 +13,8 @@ class Player(pygame.sprite.Sprite):
         self.hitbox = self.rect.inflate(-76, -36)
         self.old_rect = self.hitbox.copy()
 
+        self.z = Z_LAYERS['main']
+
         self.direction = Vector2()
         self.speed = 200
         self.gravity = 1300

@@ -8,7 +8,7 @@ from groups import AllSprites
 
 # noinspection PyTypeChecker
 class Level:
-    def __init__(self, tmx_map):
+    def __init__(self, tmx_map, level_frames):
         self.win = pygame.display.get_surface()
 
         self.all_sprites = AllSprites()
@@ -17,15 +17,34 @@ class Level:
 
         self.player = None
 
-        self.setup(tmx_map)
+        self.setup(tmx_map, level_frames)
 
-    def setup(self, tmx_map):
-        for x, y, surf in tmx_map.get_layer_by_name('Terrain').tiles():
-            Sprite((x * TILE_SIZE, y * TILE_SIZE), surf, (self.all_sprites, self.collision_sprites))
+    def setup(self, tmx_map, level_frames):
+        for layer in ['BG', 'Terrain', 'FG', 'Platforms']:
+            for x, y, surf in tmx_map.get_layer_by_name(layer).tiles():
+                groups = [self.all_sprites]
+                if layer == 'Terrain': groups.append(self.collision_sprites)
+                if layer == 'Platforms': groups.append(self.semi_collision_sprites)
+
+                match layer:
+                    case 'BG': z = Z_LAYERS['bg tiles']
+                    case 'FG': z = Z_LAYERS['fg']
+                    case _: z = Z_LAYERS['main']
+
+                Sprite((x * TILE_SIZE, y * TILE_SIZE), surf, groups, z)
 
         for obj in tmx_map.get_layer_by_name('Objects'):
             if obj.name == 'player':
-                self.player = Player((obj.x, obj.y), None, self.all_sprites, self.collision_sprites, self.semi_collision_sprites)
+                self.player = Player((obj.x, obj.y), None, self.all_sprites, self.collision_sprites,
+                                     self.semi_collision_sprites)
+
+            else:
+                if obj.name in ('barrel', 'crate'):
+                    Sprite((obj.x, obj.y), obj.image, (self.all_sprites, self.collision_sprites))
+                else:
+                    if 'palm' not in obj.name:
+                        frames = level_frames[obj.name]
+                        AnimatedSprite((obj.x, obj.y), frames, self.all_sprites)
 
         for obj in tmx_map.get_layer_by_name('Moving Objects'):
             if obj.name == 'helicopter':
