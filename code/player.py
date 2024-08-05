@@ -4,10 +4,13 @@ from settings import *
 
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self, pos, surf, groups, collision_sprites, semi_collision_sprites):
+    def __init__(self, pos, surf, groups, collision_sprites, semi_collision_sprites, frames):
+        # noinspection PyTypeChecker
         super().__init__(groups)
 
-        self.image = pygame.image.load(BASE_PATH + "graphics/player/idle/0.png")
+        self.frames, self.frame_index = frames, 0
+        self.state, self.facing_right = 'idle', True
+        self.image = self.frames[self.state][self.frame_index]
 
         self.rect = self.image.get_frect(topleft=pos)
         self.hitbox = self.rect.inflate(-76, -36)
@@ -18,6 +21,7 @@ class Player(pygame.sprite.Sprite):
         self.direction = Vector2()
         self.speed = 200
         self.gravity = 1300
+        self.attacking = False
 
         self.jump = False
         self.jump_height = 900
@@ -30,7 +34,8 @@ class Player(pygame.sprite.Sprite):
         self.timers = {
             'wall jump': Timer(400),
             'wall slide block': Timer(250),
-            'platform skip': Timer(300)
+            'platform skip': Timer(300),
+            'attack block': Timer(500)
         }
 
     def input(self):
@@ -44,8 +49,18 @@ class Player(pygame.sprite.Sprite):
 
         if keys[pygame.K_SPACE]:
             self.jump = True
+
         if keys[pygame.K_s]:
             self.timers["platform skip"].activate()
+
+        if keys[pygame.K_x]:
+            self.attack()
+
+    def attack(self):
+        if not self.timers['attack block'].active:
+            self.attacking = True
+            self.frame_index = 0
+            self.timers['attack block'].activate()
 
     def move(self, dt):
         self.hitbox.x += self.direction.x * self.speed * dt
@@ -77,6 +92,11 @@ class Player(pygame.sprite.Sprite):
         self.collision('y')
         self.semi_collision()
         self.rect.center = self.hitbox.center
+
+        if self.direction.x == 1:
+            self.facing_right = True
+        elif self.direction.x == -1:
+            self.facing_right = False
 
     def platform_move(self, dt):
         if self.platform:
@@ -135,6 +155,35 @@ class Player(pygame.sprite.Sprite):
         for timer in self.timers.values():
             timer.update()
 
+    def animate(self, dt):
+        self.frame_index += ANIMATION_SPEED * dt
+        if 'attack' in self.state and self.frame_index >= len(self.frames[self.state]):
+            self.state = 'idle'
+            self.attacking = False
+        frame = pygame.transform.flip(self.frames[self.state][int(self.frame_index) % len(self.frames[self.state])],
+                                      not self.facing_right,
+                                      False)
+        self.image = frame
+
+        self.get_state()
+
+    def get_state(self):
+        if self.on_surf['floor']:
+            if self.attacking:
+                if self.state != "attack":
+                    self.state = 'attack'
+            else:
+                self.state = 'run' if self.direction.x else 'idle'
+        else:
+            if self.attacking:
+                if self.state != "air_attack":
+                    self.state = 'air_attack'
+            else:
+                if any((self.on_surf['left'], self.on_surf['right'])):
+                    self.state = 'wall'
+                else:
+                    self.state = 'jump' if self.direction.y < 0 else 'fall'
+
     def update(self, dt):
         self.old_rect = self.hitbox.copy()
 
@@ -143,5 +192,7 @@ class Player(pygame.sprite.Sprite):
         self.input()
         self.move(dt)
         self.platform_move(dt)
+
+        self.animate(dt)
 
         self.check_contact()
