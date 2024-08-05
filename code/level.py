@@ -3,6 +3,7 @@ import pygame
 from sprites import *
 from settings import *
 from player import Player
+from groups import AllSprites
 
 
 # noinspection PyTypeChecker
@@ -10,8 +11,9 @@ class Level:
     def __init__(self, tmx_map):
         self.win = pygame.display.get_surface()
 
-        self.all_sprites = pygame.sprite.Group()
+        self.all_sprites = AllSprites()
         self.collision_sprites = pygame.sprite.Group()
+        self.semi_collision_sprites = pygame.sprite.Group()
 
         self.player = None
 
@@ -23,7 +25,7 @@ class Level:
 
         for obj in tmx_map.get_layer_by_name('Objects'):
             if obj.name == 'player':
-                self.player = Player((obj.x, obj.y), None, self.all_sprites, self.collision_sprites)
+                self.player = Player((obj.x, obj.y), None, self.all_sprites, self.collision_sprites, self.semi_collision_sprites)
 
         for obj in tmx_map.get_layer_by_name('Moving Objects'):
             if obj.name == 'helicopter':
@@ -38,10 +40,10 @@ class Level:
 
                 speed = obj.properties["speed"]
 
-                MovingSprite((self.all_sprites, self.collision_sprites), start_pos, end_pos, move_dir, speed)
+                MovingSprite((self.all_sprites, self.semi_collision_sprites), start_pos, end_pos, move_dir, speed)
 
     def run(self, dt):
         self.win.fill((0, 0, 0))
 
-        self.all_sprites.draw(self.win)
+        self.all_sprites.draw(self.player.hitbox.center)
         self.all_sprites.update(dt)
