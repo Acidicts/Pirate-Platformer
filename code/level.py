@@ -19,10 +19,13 @@ class Level:
         self.damage_sprites = pygame.sprite.Group()
         self.tooth_sprites = pygame.sprite.Group()
         self.pearl_sprites = pygame.sprite.Group()
+        self.items_sprites = pygame.sprite.Group()
 
         self.player = None
 
         self.setup(tmx_map, level_frames)
+
+        self.particle_frames = level_frames['particles']
 
     def setup(self, tmx_map, level_frames):
         for layer in ['BG', 'Terrain', 'FG', 'Platforms']:
@@ -142,21 +145,41 @@ class Level:
                       obj.properties['reverse'],
                       self.player, self.create_pearl)
 
+        for obj in tmx_map.get_layer_by_name('Items'):
+            Item(obj.name, (obj.x + TILE_SIZE/2, obj.y + TILE_SIZE/2), level_frames['items'][obj.name], (self.all_sprites, self.items_sprites))
+
     def create_pearl(self, pos, direction, surf):
         Pearl(pos, (self.all_sprites, self.damage_sprites, self.pearl_sprites), surf, direction,
               150, self.collision_sprites, self.player, self.hit_collision)
 
     def hit_player(self, rect):
         if rect.colliderect(self.player.hitbox):
-            pass
+            self.player.get_damage()
 
     def hit_collision(self):
         for sprite in self.damage_sprites:
             if sprite.rect.colliderect(self.player.hitbox):
-                pass
+                self.player.get_damage()
+
+    def item_collision(self):
+        if self.items_sprites:
+            item_sprites = pygame.sprite.spritecollide(self.player, self.items_sprites, True)
+            if item_sprites:
+                ParticleEffectSprite(item_sprites[0].rect.center, self.particle_frames, self.all_sprites)
+
+    def attack_collision(self):
+        for target in self.pearl_sprites.sprites() + self.tooth_sprites.sprites():
+            facing_target = self.player.rect.centerx < target.rect.centerx and self.player.facing_right or \
+                            self.player.rect.centerx > target.rect.centerx and not self.player.facing_right
+            if target.rect.colliderect(self.player.rect) and self.player.attacking and facing_target:
+                target.reverse()
 
     def run(self, dt):
         self.win.fill((0, 0, 0))
 
-        self.all_sprites.draw(self.player.hitbox.center)
         self.all_sprites.update(dt)
+
+        self.item_collision()
+        self.attack_collision()
+
+        self.all_sprites.draw(self.player.hitbox.center)

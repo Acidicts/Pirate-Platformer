@@ -42,6 +42,8 @@ class Game:
             'tooth': import_folder('graphics', 'enemies', 'tooth', 'run'),
             'shell': import_sub_folders('graphics', 'enemies', 'shell'),
             'pearl': import_image('graphics', 'enemies', 'bullets', 'pearl'),
+            'items': import_sub_folders('graphics', 'items'),
+            'particles': import_folder('graphics', 'effects'),
         }
 
     def run(self):

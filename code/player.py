@@ -35,7 +35,8 @@ class Player(pygame.sprite.Sprite):
             'wall jump': Timer(400),
             'wall slide block': Timer(250),
             'platform skip': Timer(300),
-            'attack block': Timer(500)
+            'attack block': Timer(500),
+            'hit': Timer(400),
         }
 
     def input(self):
@@ -184,6 +185,17 @@ class Player(pygame.sprite.Sprite):
                 else:
                     self.state = 'jump' if self.direction.y < 0 else 'fall'
 
+    def get_damaged(self):
+        if not self.timers['hit'].active:
+            self.timers['hit'].activate()
+
+    def flicker(self):
+        if self.timers['hit'].active:
+            mask = pygame.mask.from_surface(self.image)
+            white_mask = mask.to_surface()
+            white_mask.set_colorkey((0, 0, 0))
+            self.image = white_mask
+
     def update(self, dt):
         self.old_rect = self.hitbox.copy()
 
@@ -194,5 +206,6 @@ class Player(pygame.sprite.Sprite):
         self.platform_move(dt)
 
         self.animate(dt)
+        self.flicker()
 
         self.check_contact()

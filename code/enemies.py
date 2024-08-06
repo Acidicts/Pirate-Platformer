@@ -1,10 +1,11 @@
 import pygame.sprite
 
 from settings import *
+from sprites import ParticleEffectSprite
 
 
 class Tooth(pygame.sprite.Sprite):
-    def __init__(self, pos, frames, groups, collision_sprites, z=Z_LAYERS['main'], hit_player=Nonedddddddddddd):
+    def __init__(self, pos, frames, groups, collision_sprites, z=Z_LAYERS['main'], hit_player=None):
         # noinspection PyTypeChecker
         super().__init__(groups)
         self.frames, self.frame_index = frames, 0
@@ -18,6 +19,12 @@ class Tooth(pygame.sprite.Sprite):
         self.speed = 200
 
         self.hit_player = hit_player
+        self.hit_timer = Timer(250)
+
+    def reverse(self):
+        if not self.hit_timer.active:
+            self.direction *= -1
+            self.hit_timer.activate()
 
     def update(self, dt):
         self.frame_index += ANIMATION_SPEED * dt
@@ -39,6 +46,7 @@ class Tooth(pygame.sprite.Sprite):
             self.direction = 1
 
         self.hit_player(self.rect)
+        self.hit_timer.update()
 
 
 class Shell(pygame.sprite.Sprite):
@@ -46,7 +54,7 @@ class Shell(pygame.sprite.Sprite):
         # noinspection PyTypeChecker
         super().__init__(groups)
 
-        self.pearl = frames['pearl']
+        self.pearl = frames
 
         self.frames, self.frame_index = frames['shell'], 0
         self.state = 'idle'
@@ -104,7 +112,7 @@ class Pearl(pygame.sprite.Sprite):
     def __init__(self, pos, groups, surf, direction, speed, collide_sprites, player, coll):
         # noinspection PyTypeChecker
         super().__init__(groups)
-        self.image = surf
+        self.image = surf['pearl']
         self.rect = self.image.get_frect(center=pos + Vector2(50 * direction, 10))
 
         self.direction = direction
@@ -114,22 +122,35 @@ class Pearl(pygame.sprite.Sprite):
         self.collide_sprites = collide_sprites
         self.player = player
 
+        self.all_sprites = groups[0]
+
         self.life = Timer(5000)
         self.life.activate()
 
         self.collision_hit = coll
+        self.frames = surf
+        self.hit_timer = Timer(250)
+
+    def reverse(self):
+        if not self.hit_timer.active:
+            self.hit_timer.activate()
+            self.direction *= -1
 
     def update(self, dt):
         self.rect.x += self.direction * self.speed * dt
+        self.hit_timer.update()
 
         for sprite in self.collide_sprites:
             if sprite.__class__ != Shell:
                 if self.rect.colliderect(sprite.rect):
+                    ParticleEffectSprite(self.rect.center, self.frames['particles'], self.all_sprites)
                     self.kill()
                     break
                 elif self.rect.colliderect(self.player.hitbox):
+                    ParticleEffectSprite(self.rect.center, self.frames['particles'], self.all_sprites)
                     self.kill()
                     self.collision_hit()
+                    self.player.get_damaged()
 
         if self.life.active:
             self.life.update()
