@@ -1,3 +1,5 @@
+import math
+
 import pygame
 
 from settings import *
@@ -40,6 +42,8 @@ class MovingSprite(AnimatedSprite):
         else:
             self.rect.midtop = start_pos
 
+        self.rect.inflate(0, 5)
+
         self.moving = True
         self.start_pos = start_pos
         self.end_pos = end_pos
@@ -79,3 +83,37 @@ class MovingSprite(AnimatedSprite):
 
         if self.flip:
             self.image = pygame.transform.flip(self.image, self.reverse['x'], self.reverse['y'])
+
+
+class Spike(Sprite):
+    def __init__(self, pos, surf, radius, speed, start_angle, end_angle, groups, z=Z_LAYERS['main']):
+        self.center = pos
+
+        self.radius = radius
+        self.speed = speed
+
+        self.start_angle = start_angle
+        self.end_angle = end_angle
+        self.angle = self.start_angle
+
+        self.direction = 1
+
+        self.full_circle = True if self.end_angle == -1 else False
+
+        x = self.center[0] + math.cos(math.radians(self.angle)) * self.radius
+        y = self.center[1] + math.sin(math.radians(self.angle)) * self.radius
+
+        super().__init__((x, y), surf, groups, z)
+
+    def update(self, dt):
+        self.angle += self.speed * dt * self.direction
+
+        if not self.full_circle:
+            if self.angle >= self.end_angle:
+                self.direction = -1
+            if self.angle < self.start_angle:
+                self.direction = 1
+
+        x = self.center[0] + math.cos(math.radians(self.angle)) * self.radius
+        y = self.center[1] + math.sin(math.radians(self.angle)) * self.radius
+        self.rect.center = (x, y)

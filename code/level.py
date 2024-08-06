@@ -79,7 +79,24 @@ class Level:
 
         for obj in tmx_map.get_layer_by_name('Moving Objects'):
             if obj.name == "spike":
-                pass
+                Spike((obj.x + obj.width / 2, obj.y + obj.height / 2),
+                      level_frames['spike'],
+                      obj.properties['radius'],
+                      obj.properties['speed'],
+                      obj.properties['start_angle'],
+                      obj.properties['end_angle'],
+                      (self.all_sprites, self.damage_sprites))
+
+                for radius in range(0, obj.properties['radius'], 20):
+                    Spike((obj.x + obj.width / 2, obj.y + obj.height / 2),
+                          level_frames['spike_chain'],
+                          radius,
+                          obj.properties['speed'],
+                          obj.properties['start_angle'],
+                          obj.properties['end_angle'],
+                          self.all_sprites,
+                          Z_LAYERS['bg details'])
+
             else:
                 frames = level_frames[obj.name]
                 groups = (self.all_sprites, self.semi_collision_sprites) if obj.properties["platform"] else (self.all_sprites,)
@@ -107,6 +124,8 @@ class Level:
                         top, bottom = start_pos[1], end_pos[1]
                         for y in range(int(top), int(bottom), 20):
                             Sprite((x, y), level_frames['saw_chain'], (self.all_sprites, self.damage_sprites), Z_LAYERS['bg details'])
+
+
 
     def run(self, dt):
         self.win.fill((0, 0, 0))
