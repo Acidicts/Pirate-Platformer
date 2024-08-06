@@ -5,6 +5,7 @@ from settings import *
 from player import Player
 from random import uniform
 from groups import AllSprites
+from enemies import Tooth, Shell, Pearl
 
 
 # noinspection PyTypeChecker
@@ -16,6 +17,8 @@ class Level:
         self.collision_sprites = pygame.sprite.Group()
         self.semi_collision_sprites = pygame.sprite.Group()
         self.damage_sprites = pygame.sprite.Group()
+        self.tooth_sprites = pygame.sprite.Group()
+        self.pearl_sprites = pygame.sprite.Group()
 
         self.player = None
 
@@ -99,7 +102,8 @@ class Level:
 
             else:
                 frames = level_frames[obj.name]
-                groups = (self.all_sprites, self.semi_collision_sprites) if obj.properties["platform"] else (self.all_sprites,)
+                groups = (self.all_sprites, self.semi_collision_sprites) if obj.properties["platform"] else (
+                self.all_sprites,)
 
                 if obj.width > obj.height:
                     move_dir = 'x'
@@ -118,14 +122,38 @@ class Level:
                         y = start_pos[1] - level_frames['saw_chain'].get_height() / 2
                         left, right = start_pos[0], end_pos[0]
                         for x in range(int(left), int(right), 20):
-                            Sprite((x, y), level_frames['saw_chain'], (self.all_sprites, self.damage_sprites), Z_LAYERS['bg details'])
+                            Sprite((x, y), level_frames['saw_chain'], (self.all_sprites, self.damage_sprites),
+                                   Z_LAYERS['bg details'])
                     else:
                         x = start_pos[0] - level_frames['saw_chain'].get_width() / 2
                         top, bottom = start_pos[1], end_pos[1]
                         for y in range(int(top), int(bottom), 20):
-                            Sprite((x, y), level_frames['saw_chain'], (self.all_sprites, self.damage_sprites), Z_LAYERS['bg details'])
+                            Sprite((x, y), level_frames['saw_chain'], (self.all_sprites, self.damage_sprites),
+                                   Z_LAYERS['bg details'])
 
+        for obj in tmx_map.get_layer_by_name('Enemies'):
+            if obj.name == "tooth":
+                Tooth((obj.x, obj.y), level_frames['tooth'],
+                      (self.all_sprites, self.tooth_sprites, self.damage_sprites),
+                      self.collision_sprites, Z_LAYERS['main'], self.hit_player)
+            elif obj.name == "shell":
+                Shell((obj.x, obj.y), level_frames,
+                      (self.all_sprites, self.damage_sprites, self.collision_sprites),
+                      obj.properties['reverse'],
+                      self.player, self.create_pearl)
 
+    def create_pearl(self, pos, direction, surf):
+        Pearl(pos, (self.all_sprites, self.damage_sprites, self.pearl_sprites), surf, direction,
+              150, self.collision_sprites, self.player, self.hit_collision)
+
+    def hit_player(self, rect):
+        if rect.colliderect(self.player.hitbox):
+            pass
+
+    def hit_collision(self):
+        for sprite in self.damage_sprites:
+            if sprite.rect.colliderect(self.player.hitbox):
+                pass
 
     def run(self, dt):
         self.win.fill((0, 0, 0))

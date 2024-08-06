@@ -1,6 +1,7 @@
 import os
 import pygame
 import math
+from random import choice
 from pygame.math import Vector2
 
 from timer import *

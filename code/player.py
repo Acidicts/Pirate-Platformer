@@ -110,8 +110,8 @@ class Player(pygame.sprite.Sprite):
         collide_rects = [sprite.rect for sprite in self.collision_sprites]
         semi_collide_rect = [sprite.rect for sprite in self.semi_collision_sprites]
 
-        self.on_surf['floor'] = True if floor_rect.collidelist(collide_rects) >= 0 or floor_rect.collidelist(
-            semi_collide_rect) >= 0 and self.direction.y == 0 else False
+        self.on_surf['floor'] = True if floor_rect.collidelist(collide_rects) > 0 or floor_rect.collidelist(
+            semi_collide_rect) > 0 else False
         self.on_surf['right'] = True if right_rect.collidelist(collide_rects) >= 0 else False
         self.on_surf['left'] = True if left_rect.collidelist(collide_rects) >= 0 else False
 

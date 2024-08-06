@@ -42,8 +42,6 @@ class MovingSprite(AnimatedSprite):
         else:
             self.rect.midtop = start_pos
 
-        self.rect.inflate(0, 5)
-
         self.moving = True
         self.start_pos = start_pos
         self.end_pos = end_pos
