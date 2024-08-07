@@ -1,16 +1,22 @@
 import pygame
 import sys
 
+from ui import UI
+from support import *
+from data import Data
 from settings import *
 from level import Level
-from support import *
+from debug import debug_display
 from pytmx.util_pygame import load_pygame
 
 
 class Game:
     def __init__(self):
-        self.level_frames = None
         pygame.init()
+
+        self.level_frames = None
+        self.font = None
+        self.ui_frames = None
 
         self.win = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
         self.clock = pygame.time.Clock()
@@ -18,11 +24,15 @@ class Game:
 
         pygame.display.set_caption("Super Pirate Adventure")
 
-        self.tmx_maps = {0: load_pygame(BASE_PATH + 'data/levels/omni.tmx')}
+        self.ui = UI(self.font, self.ui_frames)
+        self.data = Data(self.ui)
 
-        self.current_stage = Level(self.tmx_maps[0], self.level_frames)
+        self.tmx_maps = {0: load_pygame(BASE_PATH + 'data/levels/omni.tmx')}
+        self.current_stage = Level(self.tmx_maps[0], self.level_frames, self.data)
 
     def import_assets(self):
+        self.font = pygame.font.Font(join(BASE_PATH, 'graphics', 'ui', 'runescape_uf.ttf'), 30)
+
         self.level_frames = {
             'flag': import_folder('graphics', 'level', 'flag'),
             'floor_spike': import_folder('graphics', 'enemies', 'floor_spikes'),
@@ -46,6 +56,11 @@ class Game:
             'particles': import_folder('graphics', 'effects'),
         }
 
+        self.ui_frames = {
+            'heart': import_folder('graphics', 'ui', 'heart'),
+            'coin': import_image('graphics', 'ui', 'coin'),
+        }
+
     def run(self):
         running = True
 
@@ -58,6 +73,7 @@ class Game:
 
             self.current_stage.run(dt)
 
+            self.ui.update(dt)
             pygame.display.update()
 
         pygame.quit()

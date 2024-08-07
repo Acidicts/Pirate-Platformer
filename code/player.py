@@ -1,12 +1,16 @@
+import math
+
 import pygame
 
 from settings import *
 
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self, pos, surf, groups, collision_sprites, semi_collision_sprites, frames):
+    def __init__(self, pos, surf, groups, collision_sprites, semi_collision_sprites, frames, data):
         # noinspection PyTypeChecker
         super().__init__(groups)
+
+        self.data = data
 
         self.frames, self.frame_index = frames, 0
         self.state, self.facing_right = 'idle', True
@@ -169,7 +173,7 @@ class Player(pygame.sprite.Sprite):
         self.get_state()
 
     def get_state(self):
-        if self.on_surf['floor']:
+        if self.on_surf['floor'] or self.direction.y == 0:
             if self.attacking:
                 if self.state != "attack":
                     self.state = 'attack'
@@ -188,9 +192,10 @@ class Player(pygame.sprite.Sprite):
     def get_damaged(self):
         if not self.timers['hit'].active:
             self.timers['hit'].activate()
+            self.data.health -= 1
 
     def flicker(self):
-        if self.timers['hit'].active:
+        if self.timers['hit'].active and math.sin(pygame.time.get_ticks() * 100) >= 0:
             mask = pygame.mask.from_surface(self.image)
             white_mask = mask.to_surface()
             white_mask.set_colorkey((0, 0, 0))

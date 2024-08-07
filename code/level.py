@@ -10,8 +10,10 @@ from enemies import Tooth, Shell, Pearl
 
 # noinspection PyTypeChecker
 class Level:
-    def __init__(self, tmx_map, level_frames):
+    def __init__(self, tmx_map, level_frames, data):
         self.win = pygame.display.get_surface()
+
+        self.data = data
 
         self.all_sprites = AllSprites()
         self.collision_sprites = pygame.sprite.Group()
@@ -61,7 +63,8 @@ class Level:
                     self.all_sprites,
                     self.collision_sprites,
                     self.semi_collision_sprites,
-                    level_frames['player']
+                    level_frames['player'],
+                    self.data
                 )
 
             else:
@@ -146,7 +149,8 @@ class Level:
                       self.player, self.create_pearl)
 
         for obj in tmx_map.get_layer_by_name('Items'):
-            Item(obj.name, (obj.x + TILE_SIZE/2, obj.y + TILE_SIZE/2), level_frames['items'][obj.name], (self.all_sprites, self.items_sprites))
+            Item(obj.name, (obj.x + TILE_SIZE/2, obj.y + TILE_SIZE/2),
+                 level_frames['items'][obj.name], (self.all_sprites, self.items_sprites), self.data)
 
     def create_pearl(self, pos, direction, surf):
         Pearl(pos, (self.all_sprites, self.damage_sprites, self.pearl_sprites), surf, direction,
@@ -154,7 +158,7 @@ class Level:
 
     def hit_player(self, rect):
         if rect.colliderect(self.player.hitbox):
-            self.player.get_damage()
+            self.player.get_damaged()
 
     def hit_collision(self):
         for sprite in self.damage_sprites:
@@ -166,6 +170,7 @@ class Level:
             item_sprites = pygame.sprite.spritecollide(self.player, self.items_sprites, True)
             if item_sprites:
                 ParticleEffectSprite(item_sprites[0].rect.center, self.particle_frames, self.all_sprites)
+                item_sprites[0].activate()
 
     def attack_collision(self):
         for target in self.pearl_sprites.sprites() + self.tooth_sprites.sprites():
