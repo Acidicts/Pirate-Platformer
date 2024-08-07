@@ -54,6 +54,9 @@ class Game:
             'pearl': import_image('graphics', 'enemies', 'bullets', 'pearl'),
             'items': import_sub_folders('graphics', 'items'),
             'particles': import_folder('graphics', 'effects'),
+            'water_top': import_folder('graphics', 'level', 'water', 'top'),
+            'water_body': import_image('graphics', 'level', 'water', 'body'),
+            'bg_tiles': import_folder_dict('graphics', 'level', 'bg', 'tiles'),
         }
 
         self.ui_frames = {

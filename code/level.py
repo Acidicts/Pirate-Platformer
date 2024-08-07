@@ -15,10 +15,24 @@ class Level:
 
         self.data = data
 
-        self.all_sprites = AllSprites()
+        self.level_width = tmx_map.width * TILE_SIZE
+        self.level_bottom = tmx_map.height * TILE_SIZE
+        self.level_finish_rect = None
+        tmx_level_properties = tmx_map.get_layer_by_name('Data')[0].properties
+
+        if tmx_level_properties['bg']:
+            bg_tile = level_frames['bg_tiles'][tmx_level_properties['bg']]
+        else:
+            bg_tile = None
+
+        self.all_sprites = AllSprites(self.level_width / TILE_SIZE, (self.level_bottom / TILE_SIZE) + 15, bg_tile,
+                                      tmx_level_properties['top_limit'])
+
         self.collision_sprites = pygame.sprite.Group()
         self.semi_collision_sprites = pygame.sprite.Group()
+
         self.damage_sprites = pygame.sprite.Group()
+
         self.tooth_sprites = pygame.sprite.Group()
         self.pearl_sprites = pygame.sprite.Group()
         self.items_sprites = pygame.sprite.Group()
@@ -56,6 +70,10 @@ class Level:
                                    Z_LAYERS['bg tiles'])
 
         for obj in tmx_map.get_layer_by_name('Objects'):
+
+            if obj.name == 'flag':
+                self.level_finish_rect = pygame.FRect((obj.x, obj.y), (obj.width, obj.height))
+
             if obj.name == 'player':
                 self.player = Player(
                     (obj.x, obj.y),
@@ -152,6 +170,18 @@ class Level:
             Item(obj.name, (obj.x + TILE_SIZE/2, obj.y + TILE_SIZE/2),
                  level_frames['items'][obj.name], (self.all_sprites, self.items_sprites), self.data)
 
+        for obj in tmx_map.get_layer_by_name('Water'):
+            rows = int(obj.height / TILE_SIZE)
+            cols = int(obj.width / TILE_SIZE)
+            for row in range(rows + 10):
+                for col in range(cols):
+                    x, y = obj.x + col * TILE_SIZE, obj.y + row * TILE_SIZE
+
+                    if row == 0:
+                        AnimatedSprite((x, y), level_frames['water_top'], self.all_sprites, Z_LAYERS['water'])
+                    else:
+                        Sprite((x, y), level_frames['water_body'], self.all_sprites, Z_LAYERS['water'])
+
     def create_pearl(self, pos, direction, surf):
         Pearl(pos, (self.all_sprites, self.damage_sprites, self.pearl_sprites), surf, direction,
               150, self.collision_sprites, self.player, self.hit_collision)
@@ -179,6 +209,18 @@ class Level:
             if target.rect.colliderect(self.player.rect) and self.player.attacking and facing_target:
                 target.reverse()
 
+    def check_constraint(self):
+        if self.player.hitbox.left <= 0:
+            self.player.hitbox.left = 0
+        if self.player.hitbox.right >= self.level_width:
+            self.player.hitbox.right = self.level_width
+
+        if self.player.hitbox.bottom >= self.level_bottom:
+            self.player.kill()
+
+        if self.player.hitbox.colliderect(self.level_finish_rect):
+            pass
+
     def run(self, dt):
         self.win.fill((0, 0, 0))
 
@@ -186,5 +228,6 @@ class Level:
 
         self.item_collision()
         self.attack_collision()
+        self.check_constraint()
 
         self.all_sprites.draw(self.player.hitbox.center)
