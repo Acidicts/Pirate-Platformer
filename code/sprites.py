@@ -1,7 +1,7 @@
 import math
-
 import pygame
 
+from random import randint
 from settings import *
 
 
@@ -152,3 +152,17 @@ class Spike(Sprite):
         x = self.center[0] + math.cos(math.radians(self.angle)) * self.radius
         y = self.center[1] + math.sin(math.radians(self.angle)) * self.radius
         self.rect.center = (x, y)
+
+
+class Cloud(Sprite):
+    def __init__(self, pos, surf, groups, z=Z_LAYERS['clouds']):
+        super().__init__(pos, surf, groups, z)
+        self.speed = randint(50, 120)
+        self.direction = -1
+        self.rect.midbottom = pos
+
+    def update(self, dt):
+        self.rect.x += self.direction * self.speed * dt
+
+        if self.rect.right <= 0:
+            self.kill()

@@ -25,8 +25,10 @@ class Level:
         else:
             bg_tile = None
 
-        self.all_sprites = AllSprites(self.level_width / TILE_SIZE, (self.level_bottom / TILE_SIZE) + 15, bg_tile,
-                                      tmx_level_properties['top_limit'])
+        self.all_sprites = AllSprites(self.level_width / TILE_SIZE, (self.level_bottom / TILE_SIZE), bg_tile,
+                                      tmx_level_properties['top_limit'], {'small': level_frames['small_clouds'],
+                                                                          'big': level_frames['big_clouds']},
+                                      tmx_level_properties['horizon_line'])
 
         self.collision_sprites = pygame.sprite.Group()
         self.semi_collision_sprites = pygame.sprite.Group()
@@ -195,6 +197,11 @@ class Level:
             if sprite.rect.colliderect(self.player.hitbox):
                 self.player.get_damage()
 
+    def damage_check(self):
+        for sprite in self.damage_sprites:
+            if sprite.rect.colliderect(self.player.hitbox):
+                self.player.get_damaged()
+
     def item_collision(self):
         if self.items_sprites:
             item_sprites = pygame.sprite.spritecollide(self.player, self.items_sprites, True)
@@ -229,5 +236,6 @@ class Level:
         self.item_collision()
         self.attack_collision()
         self.check_constraint()
+        self.damage_check()
 
-        self.all_sprites.draw(self.player.hitbox.center)
+        self.all_sprites.draw(self.player.hitbox.center, dt)
