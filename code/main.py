@@ -7,6 +7,7 @@ from data import Data
 from settings import *
 from level import Level
 from debug import debug_display
+from overworld import Overworld
 from pytmx.util_pygame import load_pygame
 
 
@@ -28,7 +29,8 @@ class Game:
         self.data = Data(self.ui)
 
         self.tmx_maps = {0: load_pygame(BASE_PATH + 'data/levels/omni.tmx')}
-        self.current_stage = Level(self.tmx_maps[0], self.level_frames, self.data)
+        self.tmx_overworld = load_pygame(BASE_PATH + 'data/overworld/overworld.tmx')
+        self.current_stage = Overworld(self.tmx_overworld, self.data, self.overworld_frames)
 
     def import_assets(self):
         self.font = pygame.font.Font(join(BASE_PATH, 'graphics', 'ui', 'runescape_uf.ttf'), 30)
@@ -64,6 +66,11 @@ class Game:
         self.ui_frames = {
             'heart': import_folder('graphics', 'ui', 'heart'),
             'coin': import_image('graphics', 'ui', 'coin'),
+        }
+
+        self.overworld_frames = {
+            'palms': import_folder('graphics', 'overworld', 'palm'),
+            'water': import_folder('graphics', 'overworld', 'water'),
         }
 
     def run(self):

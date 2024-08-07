@@ -6,6 +6,23 @@ from sprites import Sprite, Cloud
 from random import choice, randint
 
 
+class WorldSprites(pygame.sprite.Group):
+    def __init__(self, data):
+        super().__init__()
+        self.display_surf = pygame.display.get_surface()
+        self.update(data)
+
+        self.offset = Vector2()
+
+    def draw(self, target_pos):
+        self.offset.x = -(target_pos[0] - WINDOW_WIDTH / 2)
+        self.offset.y = -(target_pos[1] - WINDOW_HEIGHT / 2)
+
+        for sprit in sorted(self, key=lambda sprit: sprit.z):
+            offset_pos = sprit.rect.topleft + self.offset
+            self.display_surf.blit(sprit.image, offset_pos)
+
+
 class AllSprites(pygame.sprite.Group):
     def __init__(self, width, height, bg_tile=None, top_limit=0, clouds=None, horizon_line=400):
         super().__init__()
