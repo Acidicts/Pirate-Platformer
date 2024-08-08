@@ -3,13 +3,14 @@ import pygame.sprite
 from settings import *
 from random import randint
 from groups import WorldSprites
-from sprites import Sprite, AnimatedSprite, Node, Icon
+from sprites import Sprite, AnimatedSprite, Node, Icon, PathSprite
 
 
 class Overworld:
-    def __init__(self, tmx_map, data, overworld_frames):
+    def __init__(self, tmx_map, data, overworld_frames, switch_stage):
         self.display_surf = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
         self.data = data
+        self.switch_stage = switch_stage
 
         self.all_sprites = WorldSprites(self.data)
         self.node_sprites = pygame.sprite.Group()
@@ -20,6 +21,9 @@ class Overworld:
         self.setup(tmx_map, overworld_frames)
 
         self.current_node = [node for node in self.node_sprites if node.level == 0][0]
+
+        self.path_frames = overworld_frames['path']
+        self.create_path_tiles()
 
     def setup(self, tmx_map, overworld_frames):
         for layer in ['main', 'top']:
@@ -56,6 +60,66 @@ class Overworld:
                 Node((obj.x, obj.y), overworld_frames['path']['node'], (self.all_sprites, self.node_sprites),
                      obj.properties['stage'], self.data, available_paths)
 
+    def create_path_tiles(self):
+
+        nodes = {node.level: Vector2(node.grid_pos) for node in self.node_sprites}
+        path_tiles = {}
+
+        for path_id, data in self.paths.items():
+            path = data['pos']
+            start_node, end_node = nodes[data['start']], nodes[path_id]
+            path_tiles[path_id] = start_node
+            path_tiles[path_id] = [start_node]
+
+            for index, points in enumerate(path):
+                if index < len(path) - 1:
+
+                    start, end = Vector2(points), Vector2(path[index + 1])
+
+                    path_dir = (end - start) / TILE_SIZE
+                    start_tile = Vector2(int(start[0] / TILE_SIZE), int(start[1] / TILE_SIZE))
+
+                    if path_dir.y:
+                        dir_y = 1 if path_dir.y > 0 else -1
+                        for y in range(dir_y, int(path_dir.y) + dir_y, dir_y):
+                            path_tiles[path_id].append(start_tile + Vector2(0, y))
+
+                    if path_dir.x:
+                        dir_x = 1 if path_dir.x > 0 else -1
+                        for x in range(dir_x, int(path_dir.x) + dir_x, dir_x):
+                            path_tiles[path_id].append(start_tile + Vector2(x, 0))
+
+            path_tiles[path_id].append(end_node)
+
+        for key, path in path_tiles.items():
+            for index, tile in enumerate(path):
+                if 0 < index < len(path) - 1:
+                    prev_tile = path[index - 1] - tile
+                    next_tile = path[index + 1] - tile
+
+                    if prev_tile.x == next_tile.x:
+                        surf = self.path_frames['vertical']
+                    elif prev_tile.y == next_tile.y:
+                        surf = self.path_frames['horizontal']
+                    else:
+                        if int(prev_tile.x) == -1 and int(next_tile.y) == -1 or int(prev_tile.y) == -1 and int(
+                                next_tile.x) == -1:
+                            surf = self.path_frames['tl']
+                        elif int(prev_tile.x) == 1 and int(next_tile.y) == 1 or int(prev_tile.y) == 1 and int(
+                                next_tile.x) == 1:
+                            surf = self.path_frames['br']
+                        elif int(prev_tile.x) == -1 and int(next_tile.y) == 1 or int(prev_tile.y) == 1 and int(
+                                next_tile.x) == -1:
+                            surf = self.path_frames['bl']
+                        elif int(prev_tile.x) == 1 and int(next_tile.y) == -1 or int(prev_tile.y) == -1 and int(
+                                next_tile.x) == 1:
+                            surf = self.path_frames['tr']
+                        else:
+                            surf = self.path_frames['horizontal']
+
+                    PathSprite((tile.x * TILE_SIZE, tile.y * TILE_SIZE),
+                               surf, self.all_sprites, key)
+
     def input(self):
         keys = pygame.key.get_pressed()
 
@@ -68,6 +132,9 @@ class Overworld:
                 self.move('left')
             if keys[pygame.K_d] and self.current_node.can_move('right'):
                 self.move('right')
+            if keys[pygame.K_RETURN]:
+                self.data.current_level = self.current_node.level
+                self.switch_stage('level', self.current_node.level)
 
     def move(self, direction):
         path_key = int(self.current_node.paths[direction][0])
