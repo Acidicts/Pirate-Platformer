@@ -12,6 +12,8 @@ class WorldSprites(pygame.sprite.Group):
         self.display_surf = pygame.display.get_surface()
         self.update(data)
 
+        self.data = data
+
         self.offset = Vector2()
 
     def draw(self, target_pos):
@@ -19,8 +21,19 @@ class WorldSprites(pygame.sprite.Group):
         self.offset.y = -(target_pos[1] - WINDOW_HEIGHT / 2)
 
         for sprit in sorted(self, key=lambda sprit: sprit.z):
-            offset_pos = sprit.rect.topleft + self.offset
-            self.display_surf.blit(sprit.image, offset_pos)
+            if sprit.z < Z_LAYERS['main']:
+                if sprit.z == Z_LAYERS['path']:
+                    if sprit.level <= self.data.unlocked_level:
+                        self.display_surf.blit(sprit.image, sprit.rect.topleft + self.offset)
+                else:
+                    self.display_surf.blit(sprit.image, sprit.rect.topleft + self.offset)
+
+        for sprit in sorted(self, key=lambda sprit: sprit.rect.centery):
+            if sprit.z == Z_LAYERS['main']:
+                if hasattr(sprit, 'icon'):
+                    self.display_surf.blit(sprit.image, sprit.rect.topleft + self.offset + Vector2(0, -20))
+                else:
+                    self.display_surf.blit(sprit.image, sprit.rect.topleft + self.offset)
 
 
 class AllSprites(pygame.sprite.Group):

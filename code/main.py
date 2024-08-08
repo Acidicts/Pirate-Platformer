@@ -16,6 +16,7 @@ class Game:
         pygame.init()
 
         self.level_frames = None
+        self.overworld_frames = None
         self.font = None
         self.ui_frames = None
 
@@ -71,6 +72,8 @@ class Game:
         self.overworld_frames = {
             'palms': import_folder('graphics', 'overworld', 'palm'),
             'water': import_folder('graphics', 'overworld', 'water'),
+            'path': import_folder_dict('graphics', 'overworld', 'path'),
+            'icon': import_sub_folders('graphics', 'overworld', 'icon'),
         }
 
     def run(self):
