@@ -6,7 +6,7 @@ from settings import *
 
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self, pos, surf, groups, collision_sprites, semi_collision_sprites, frames, data):
+    def __init__(self, pos, surf, groups, collision_sprites, semi_collision_sprites, frames, data, audio):
         # noinspection PyTypeChecker
         super().__init__(groups)
 
@@ -40,8 +40,14 @@ class Player(pygame.sprite.Sprite):
             'wall slide block': Timer(250),
             'platform skip': Timer(300),
             'attack block': Timer(500),
-            'hit': Timer(400),
+            'hit': Timer(400)
         }
+
+        self.attack_audio = audio['attack']
+        self.damage_audio = audio['damage']
+        self.jump_audio = audio['jump']
+
+        self.jump_audio.set_volume(0.1)
 
     def input(self):
         keys = pygame.key.get_pressed()
@@ -59,7 +65,9 @@ class Player(pygame.sprite.Sprite):
             self.timers["platform skip"].activate()
 
         if keys[pygame.K_x]:
-            self.attack()
+            if not self.timers['attack block'].active:
+                self.attack_audio.play()
+                self.attack()
 
     def attack(self):
         if not self.timers['attack block'].active:
@@ -85,12 +93,14 @@ class Player(pygame.sprite.Sprite):
                 self.direction.y = -self.jump_height
                 self.timers['wall slide block'].activate()
                 self.hitbox.bottom -= 1
+                self.jump_audio.play()
 
             elif any((self.on_surf['left'], self.on_surf['right'])) and not self.timers['wall slide block'].active:
 
                 self.timers['wall jump'].activate()
                 self.direction.y = -self.jump_height
                 self.direction.x = 1 if self.on_surf['left'] else -1
+                self.jump_audio.play()
 
             self.jump = False
 
@@ -193,6 +203,7 @@ class Player(pygame.sprite.Sprite):
         if not self.timers['hit'].active:
             self.timers['hit'].activate()
             self.data.health -= 1
+            self.damage_audio.play()
 
     def flicker(self):
         if self.timers['hit'].active and math.sin(pygame.time.get_ticks() * 100) >= 0:

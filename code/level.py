@@ -10,16 +10,18 @@ from enemies import Tooth, Shell, Pearl
 
 # noinspection PyTypeChecker
 class Level:
-    def __init__(self, tmx_map, level_frames, data):
+    def __init__(self, tmx_map, level_frames, data, switch_stage, audio_files):
         self.win = pygame.display.get_surface()
 
         self.data = data
+        self.switch_stage = switch_stage
 
         self.level_width = tmx_map.width * TILE_SIZE
         self.level_bottom = tmx_map.height * TILE_SIZE
         self.level_finish_rect = None
         tmx_level_properties = tmx_map.get_layer_by_name('Data')[0].properties
 
+        self.level_unlock = tmx_level_properties['level_unlock']
         if tmx_level_properties['bg']:
             bg_tile = level_frames['bg_tiles'][tmx_level_properties['bg']]
         else:
@@ -41,11 +43,17 @@ class Level:
 
         self.player = None
 
-        self.setup(tmx_map, level_frames)
+        self.setup(tmx_map, level_frames, audio_files)
 
         self.particle_frames = level_frames['particles']
 
-    def setup(self, tmx_map, level_frames):
+        self.coin = audio_files['coin']
+        self.pearl = audio_files['pearl']
+        self.hit = audio_files['hit']
+
+        self.coin.set_volume(0.25)
+
+    def setup(self, tmx_map, level_frames, audio_files):
         for layer in ['BG', 'Terrain', 'FG', 'Platforms']:
             for x, y, surf in tmx_map.get_layer_by_name(layer).tiles():
                 groups = [self.all_sprites]
@@ -84,7 +92,8 @@ class Level:
                     self.collision_sprites,
                     self.semi_collision_sprites,
                     level_frames['player'],
-                    self.data
+                    self.data,
+                    audio_files
                 )
 
             else:
@@ -187,6 +196,7 @@ class Level:
     def create_pearl(self, pos, direction, surf):
         Pearl(pos, (self.all_sprites, self.damage_sprites, self.pearl_sprites), surf, direction,
               150, self.collision_sprites, self.player, self.hit_collision)
+        self.pearl.play()
 
     def hit_player(self, rect):
         if rect.colliderect(self.player.hitbox):
@@ -208,6 +218,7 @@ class Level:
             if item_sprites:
                 ParticleEffectSprite(item_sprites[0].rect.center, self.particle_frames, self.all_sprites)
                 item_sprites[0].activate()
+                self.coin.play()
 
     def attack_collision(self):
         for target in self.pearl_sprites.sprites() + self.tooth_sprites.sprites():
@@ -215,6 +226,7 @@ class Level:
                             self.player.rect.centerx > target.rect.centerx and not self.player.facing_right
             if target.rect.colliderect(self.player.rect) and self.player.attacking and facing_target:
                 target.reverse()
+                self.hit.play()
 
     def check_constraint(self):
         if self.player.hitbox.left <= 0:
@@ -223,10 +235,10 @@ class Level:
             self.player.hitbox.right = self.level_width
 
         if self.player.hitbox.bottom >= self.level_bottom:
-            self.player.kill()
+            self.switch_stage('overworld', -1)
 
         if self.player.hitbox.colliderect(self.level_finish_rect):
-            pass
+            self.switch_stage('overworld', self.level_unlock)
 
     def run(self, dt):
         self.win.fill((0, 0, 0))
